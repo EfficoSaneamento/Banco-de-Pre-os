@@ -17,6 +17,19 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        
+        /* Animação de carregamento */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--effico-green);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-slate-100 flex h-screen font-sans overflow-hidden">
@@ -34,37 +47,31 @@
 
         <nav class="mt-6 flex-1 px-4 space-y-2">
             <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-white/10 transition">
-                <i class="fas fa-chart-line w-5 text-green-400"></i> Dashboard
-            </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition">
                 <i class="fas fa-search-dollar w-5"></i> Banco de Preços
             </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition">
-                <i class="fas fa-history w-5"></i> Histórico DB_ITENS
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition opacity-50 cursor-not-allowed">
+                <i class="fas fa-history w-5"></i> Histórico (Breve)
             </a>
             <div class="pt-4 pb-2 text-[10px] uppercase text-slate-500 font-bold px-4">Administrativo</div>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition opacity-50 cursor-not-allowed">
                 <i class="fas fa-users w-5"></i> Compradores
             </a>
         </nav>
         
         <div class="p-4 border-t border-white/10 text-[10px] text-slate-400 text-center">
-            v2.0 - Gestão de Suprimentos
+            v2.1 - Conectado ao Apps Script
         </div>
     </aside>
 
     <main class="flex-1 flex flex-col bg-white">
         <header class="h-16 border-b flex items-center px-8 justify-between bg-white shadow-sm z-10">
             <div class="flex items-center gap-2 text-sm font-medium text-slate-600">
-                <i class="fas fa-globe text-slate-400"></i>
-                <span>github.com/effico/banco-de-precos</span>
+                <i class="fas fa-database text-slate-400"></i>
+                <span id="statusConexao">Sincronizando com DB_ITENS...</span>
             </div>
-            <div class="flex items-center gap-6">
-                <button class="relative text-slate-500"><i class="fas fa-bell"></i><span class="absolute -top-1 -right-1 bg-red-500 w-2 h-2 rounded-full"></span></button>
-                <div class="flex items-center gap-3 pl-6 border-l">
-                    <span class="text-sm font-bold text-effico-dark">Portal de Compras</span>
-                    <div class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center"><i class="fas fa-user text-slate-500"></i></div>
-                </div>
+            <div class="flex items-center gap-3 pl-6">
+                <span class="text-sm font-bold text-effico-dark">Portal de Compras</span>
+                <div class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center"><i class="fas fa-user text-slate-500"></i></div>
             </div>
         </header>
 
@@ -72,29 +79,28 @@
             <div class="flex justify-between items-end mb-8">
                 <div>
                     <h2 class="text-3xl font-extrabold text-effico-dark tracking-tight">BANCO DE PREÇOS</h2>
-                    <p class="text-slate-500">Consulta técnica de insumos e histórico de cotações</p>
+                    <p class="text-slate-500">Consulta e lançamento de insumos em tempo real</p>
                 </div>
                 <button onclick="toggleModal()" class="bg-effico-dark hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-3 transition transform hover:scale-105 shadow-lg">
                     <i class="fas fa-plus-circle text-green-400"></i> NOVO LANÇAMENTO
                 </button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase">Buscar Produto</label>
-                    <input type="text" placeholder="Ex: Válvula, Tubo..." class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 outline-none">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="md:col-span-2 space-y-1">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pesquisa Global</label>
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-3 top-3 text-slate-400"></i>
+                        <input type="text" id="inputBusca" placeholder="Busque por Produto, Fornecedor ou Código..." 
+                               class="w-full border rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+                    </div>
                 </div>
                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase">Centro de Custo</label>
-                    <select class="w-full border rounded-lg px-3 py-2 text-sm outline-none"><option>Todos</option></select>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ações</label>
+                    <button onclick="carregarDados()" class="w-full bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl font-bold text-sm h-10 transition flex items-center justify-center gap-2">
+                        <i class="fas fa-sync"></i> ATUALIZAR TABELA
+                    </button>
                 </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase">Data Referência</label>
-                    <input type="month" class="w-full border rounded-lg px-3 py-2 text-sm outline-none">
-                </div>
-                <button class="bg-effico-green hover:bg-green-700 text-white rounded-lg font-bold text-sm transition self-end h-10">
-                    <i class="fas fa-filter mr-2"></i> APLICAR FILTROS
-                </button>
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -105,33 +111,24 @@
                             <th class="px-6 py-4">Produto</th>
                             <th class="px-6 py-4">Fornecedor</th>
                             <th class="px-6 py-4 text-center">Qtd</th>
-                            <th class="px-6 py-4">Preço Unit.</th>
+                            <th class="px-6 py-4">Unitário</th>
                             <th class="px-6 py-4">Total</th>
-                            <th class="px-6 py-4">Situação</th>
+                            <th class="px-6 py-4">Status</th>
                         </tr>
                     </thead>
                     <tbody id="corpoTabela" class="text-sm text-slate-600">
-                        <tr class="border-b hover:bg-slate-50 transition">
-                            <td class="px-6 py-4 font-mono text-xs font-bold text-slate-400">ITM-4492</td>
-                            <td class="px-6 py-4 font-semibold text-effico-dark">Válvula de Retenção 4"</td>
-                            <td class="px-6 py-4 text-xs">HIDRO-SANE LTDA</td>
-                            <td class="px-6 py-4 text-center">10</td>
-                            <td class="px-6 py-4 font-medium">R$ 450,00</td>
-                            <td class="px-6 py-4 font-bold text-effico-green">R$ 4.500,00</td>
-                            <td class="px-6 py-4"><span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-[10px] font-bold uppercase">Concluído</span></td>
-                        </tr>
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
         </section>
     </main>
 
     <div id="modalCadastro" class="fixed inset-0 bg-effico-dark/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col scale-95 transition-all duration-300">
             <div class="p-6 border-b flex justify-between items-center bg-slate-50">
                 <div class="flex items-center gap-3">
                     <div class="w-2 h-8 bg-effico-green rounded-full"></div>
-                    <h3 class="text-xl font-bold text-effico-dark uppercase tracking-tight">Novo Registro - Banco de Preços</h3>
+                    <h3 class="text-xl font-bold text-effico-dark uppercase tracking-tight">Novo Registro - DB_ITENS</h3>
                 </div>
                 <button onclick="toggleModal()" class="text-slate-400 hover:text-red-500 text-2xl transition">&times;</button>
             </div>
@@ -139,61 +136,68 @@
             <form id="formCadastro" class="p-8 overflow-y-auto">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Código PRD</label>
-                        <input type="text" name="CODIGO_PRD" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none transition bg-transparent" placeholder="Ex: PRD001" required>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cód. PRD</label>
+                        <input type="text" name="CODIGO_PRD" required class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data Criação</label>
-                        <input type="date" name="DATA_CRIACAO" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none transition bg-transparent" required>
+                        <input type="date" name="DATA_CRIACAO" id="dataAtual" required class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cód. Cotação</label>
-                        <input type="text" name="COD_COTACAO" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none transition bg-transparent">
+                        <input type="text" name="COD_COTACAO" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Situação</label>
                         <select name="SITUACAO" class="w-full border-b-2 border-slate-200 p-2 text-sm outline-none">
                             <option value="CONCLUIDO">Concluído</option>
-                            <option value="EM ABERTO">Em Aberto</option>
+                            <option value="EM ANALISE">Em Análise</option>
                             <option value="CANCELADO">Cancelado</option>
                         </select>
                     </div>
 
                     <div class="md:col-span-2">
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Produto / Insumo</label>
-                        <input type="text" name="PRODUTO" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none transition bg-transparent" required>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Produto / Serviço</label>
+                        <input type="text" name="PRODUTO" required class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Comprador</label>
-                        <input type="text" name="COMPRADOR" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none transition bg-transparent">
+                        <input type="text" name="COMPRADOR" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Centro de Custo</label>
-                        <input type="text" name="CENTRO_DE_CUSTO" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none transition bg-transparent">
+                        <input type="text" name="CENTRO_DE_CUSTO" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
                     </div>
 
                     <div class="md:col-span-2">
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fornecedor</label>
-                        <input type="text" name="FORNECEDOR" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none transition bg-transparent">
+                        <input type="text" name="FORNECEDOR" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Qtd</label>
-                        <input type="number" id="inputQtd" oninput="calcTotal()" name="QUANTIDADE" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none transition bg-transparent" required>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Quantidade</label>
+                        <input type="number" name="QUANTIDADE" id="inQtd" oninput="calcTotal()" required class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Preço Unitário (R$)</label>
-                        <input type="number" step="0.01" id="inputUnit" oninput="calcTotal()" name="PRECO_UNITARIO" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none transition bg-transparent" required>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Preço Unitário</label>
+                        <input type="number" step="0.01" name="PRECO_UNITARIO" id="inPreco" oninput="calcTotal()" required class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
+                    </div>
+                    
+                    <div class="hidden">
+                        <input type="text" name="ORIGEM" value="Sistema Web">
+                        <input type="number" name="VALOR_TOTAL" id="inTotal">
                     </div>
                 </div>
 
                 <div class="flex justify-between items-center pt-8 border-t border-slate-100">
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Valor Total Calculado</span>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Subtotal Calculado</span>
                         <span id="labelTotal" class="text-3xl font-black text-effico-green">R$ 0,00</span>
                     </div>
                     <div class="flex gap-4">
                         <button type="button" onclick="toggleModal()" class="px-8 py-3 rounded-xl font-bold text-slate-400 hover:bg-slate-50 transition">DESCARTAR</button>
-                        <button type="submit" class="px-10 py-3 rounded-xl bg-effico-green hover:bg-green-700 text-white font-extrabold shadow-lg shadow-green-200 transition">SALVAR NA PLANILHA</button>
+                        <button type="submit" id="btnSalvar" class="px-10 py-3 rounded-xl bg-effico-green hover:bg-green-700 text-white font-extrabold shadow-lg transition disabled:opacity-50">
+                            SALVAR NA PLANILHA
+                        </button>
                     </div>
                 </div>
             </form>
@@ -201,8 +205,16 @@
     </div>
 
     <script>
-        // URL da sua API Google Apps Script (Cole aqui após implantar)
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxePib6nkhaTLjwPZVP_mg9QavJeHYUFAhleJZBaIhlUZ-8kF9l1xcwLR2a1_UaUwu0/exec";
+        // Substitua pela URL da "Nova Implantação" do seu Apps Script
+        const API_URL = "https://script.google.com/macros/s/AKfycbxePib6nkhaTLjwPZVP_mg9QavJeHYUFAhleJZBaIhlUZ-8kF9l1xcwLR2a1_UaUwu0/exec";
+        
+        let dadosOriginais = [];
+
+        // Inicialização
+        window.onload = () => {
+            carregarDados();
+            document.getElementById('dataAtual').valueAsDate = new Date();
+        };
 
         function toggleModal() {
             const modal = document.getElementById('modalCadastro');
@@ -211,45 +223,96 @@
         }
 
         function calcTotal() {
-            const q = document.getElementById('inputQtd').value || 0;
-            const u = document.getElementById('inputUnit').value || 0;
-            const total = q * u;
+            const q = document.getElementById('inQtd').value || 0;
+            const p = document.getElementById('inPreco').value || 0;
+            const total = q * p;
+            document.getElementById('inTotal').value = total;
             document.getElementById('labelTotal').innerText = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
-        // Lógica de Envio para o Google Sheets
-        document.getElementById('formCadastro').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button[type="submit"]');
-            btn.innerText = "ENVIANDO...";
-            btn.disabled = true;
-
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData);
-            // Adiciona o total calculado
-            data.VALOR_TOTAL = (data.QUANTIDADE * data.PRECO_UNITARIO);
+        // BUSCAR DADOS (doGet)
+        async function carregarDados() {
+            const status = document.getElementById('statusConexao');
+            const tabela = document.getElementById('corpoTabela');
+            
+            status.innerHTML = '<span class="loader"></span> Sincronizando...';
+            tabela.innerHTML = '<tr><td colspan="7" class="p-12 text-center text-slate-400 italic">Buscando informações no banco de dados...</td></tr>';
 
             try {
-                // Se o SCRIPT_URL estiver vazio, simula sucesso para teste
-                if(SCRIPT_URL === "COLE_SUA_URL_DO_GOOGLE_SCRIPT_AQUI") {
-                    console.log("Dados que seriam enviados:", data);
-                    alert("Atenção: Configure a URL do Google Apps Script no código para salvar de verdade!");
-                } else {
-                    await fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify(data)
-                    });
-                    alert("Dados salvos com sucesso na aba DB_ITENS!");
-                }
-                
+                const res = await fetch(API_URL);
+                const data = await res.json();
+                dadosOriginais = data;
+                renderizarTabela(data);
+                status.innerHTML = '<i class="fas fa-check-circle text-green-500"></i> Banco de Dados Atualizado';
+            } catch (err) {
+                status.innerHTML = '<i class="fas fa-times-circle text-red-500"></i> Erro de Conexão';
+                tabela.innerHTML = '<tr><td colspan="7" class="p-12 text-center text-red-400">Não foi possível carregar os dados. Verifique a URL do Script.</td></tr>';
+            }
+        }
+
+        function renderizarTabela(dados) {
+            const tabela = document.getElementById('corpoTabela');
+            if (dados.length === 0) {
+                tabela.innerHTML = '<tr><td colspan="7" class="p-12 text-center">Nenhum registro encontrado em DB_ITENS.</td></tr>';
+                return;
+            }
+
+            tabela.innerHTML = dados.map(item => `
+                <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="px-6 py-4 font-mono text-xs font-bold text-slate-400">${item.CODIGO_PRD || '-'}</td>
+                    <td class="px-6 py-4 font-semibold text-effico-dark">${item.PRODUTO || '-'}</td>
+                    <td class="px-6 py-4 text-xs">${item.FORNECEDOR || '-'}</td>
+                    <td class="px-6 py-4 text-center">${item.QUANTIDADE || 0}</td>
+                    <td class="px-6 py-4">R$ ${Number(item.PRECO_UNITARIO || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="px-6 py-4 font-bold text-effico-green">R$ ${Number(item.VALOR_TOTAL || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase ${item.SITUACAO === 'CONCLUIDO' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-600'}">
+                            ${item.SITUACAO || 'PENDENTE'}
+                        </span>
+                    </td>
+                </tr>
+            `).reverse().join(''); // Reverse para ver os mais novos primeiro
+        }
+
+        // PESQUISA EM TEMPO REAL
+        document.getElementById('inputBusca').addEventListener('input', (e) => {
+            const termo = e.target.value.toLowerCase();
+            const filtrados = dadosOriginais.filter(i => 
+                String(i.PRODUTO).toLowerCase().includes(termo) || 
+                String(i.FORNECEDOR).toLowerCase().includes(termo) ||
+                String(i.CODIGO_PRD).toLowerCase().includes(termo)
+            );
+            renderizarTabela(filtrados);
+        });
+
+        // SALVAR DADOS (doPost)
+        document.getElementById('formCadastro').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnSalvar');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader"></span> PROCESSANDO...';
+
+            const payload = Object.fromEntries(new FormData(e.target));
+
+            try {
+                // O fetch POST para Apps Script requer o modo 'no-cors' ou redirecionamento manual
+                // No entanto, para simplificar e garantir que o POST chegue:
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Apps Script muitas vezes exige isso para POST simples
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                alert("Dados enviados com sucesso!");
                 toggleModal();
                 e.target.reset();
-                document.getElementById('labelTotal').innerText = "R$ 0,00";
-            } catch (error) {
-                alert("Erro ao salvar. Verifique a conexão.");
+                carregarDados(); // Recarrega para mostrar o novo item
+            } catch (err) {
+                alert("Erro ao salvar. Tente novamente.");
             } finally {
-                btn.innerText = "SALVAR NA PLANILHA";
                 btn.disabled = false;
+                btn.innerText = 'SALVAR COTAÇÃO';
             }
         });
     </script>
