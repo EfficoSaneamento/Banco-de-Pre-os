@@ -3,32 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Effico | Banco de Preços Corporativo</title>
+    <title>Effico | Gestão de Suprimentos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --effico-dark: #1e3a5a;
-            --effico-green: #4a7c59;
-        }
+        :root { --effico-dark: #1e3a5a; --effico-green: #4a7c59; }
         .bg-effico-dark { background-color: var(--effico-dark); }
         .bg-effico-green { background-color: var(--effico-green); }
         .text-effico-dark { color: var(--effico-dark); }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
         
-        /* Animação de carregamento */
-        .loader {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid var(--effico-green);
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
+        /* Correção dos erros de "Unknown at rule @apply" */
+        .label-form {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
         }
+        .input-form {
+            width: 100%;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 0.5rem;
+            font-size: 0.875rem;
+            outline: none;
+            background: transparent;
+            transition: border-color 0.2s;
+        }
+        .input-form:focus { border-color: var(--effico-green); }
+
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--effico-green); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -46,31 +50,27 @@
         </div>
 
         <nav class="mt-6 flex-1 px-4 space-y-2">
-            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-white/10 transition">
+            <button onclick="mudarAba('banco')" id="btn-banco" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-white/10 transition text-left">
                 <i class="fas fa-search-dollar w-5"></i> Banco de Preços
-            </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition opacity-50 cursor-not-allowed">
-                <i class="fas fa-history w-5"></i> Histórico (Breve)
-            </a>
-            <div class="pt-4 pb-2 text-[10px] uppercase text-slate-500 font-bold px-4">Administrativo</div>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition opacity-50 cursor-not-allowed">
-                <i class="fas fa-users w-5"></i> Compradores
-            </a>
+            </button>
+            <button onclick="mudarAba('licitacao')" id="btn-licitacao" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition text-left">
+                <i class="fas fa-file-contract w-5"></i> Licitações
+            </button>
         </nav>
         
         <div class="p-4 border-t border-white/10 text-[10px] text-slate-400 text-center">
-            v2.1 - Conectado ao Apps Script
+            v3.5 - DB_LICITACOES Integrado
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col bg-white">
+    <main class="flex-1 flex flex-col bg-white overflow-hidden">
         <header class="h-16 border-b flex items-center px-8 justify-between bg-white shadow-sm z-10">
             <div class="flex items-center gap-2 text-sm font-medium text-slate-600">
                 <i class="fas fa-database text-slate-400"></i>
-                <span id="statusConexao">Sincronizando com DB_ITENS...</span>
+                <span id="statusConexao">Sincronizado</span>
             </div>
-            <div class="flex items-center gap-3 pl-6">
-                <span class="text-sm font-bold text-effico-dark">Portal de Compras</span>
+            <div class="flex items-center gap-3">
+                <span class="text-sm font-bold text-effico-dark">Portal de Suprimentos</span>
                 <div class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center"><i class="fas fa-user text-slate-500"></i></div>
             </div>
         </header>
@@ -78,12 +78,18 @@
         <section class="p-8 overflow-y-auto flex-1">
             <div class="flex justify-between items-end mb-8">
                 <div>
-                    <h2 class="text-3xl font-extrabold text-effico-dark tracking-tight">BANCO DE PREÇOS</h2>
-                    <p class="text-slate-500">Consulta e lançamento de insumos em tempo real</p>
+                    <h2 id="tituloPagina" class="text-3xl font-extrabold text-effico-dark tracking-tight uppercase">BANCO DE PREÇOS</h2>
+                    <p id="subtituloPagina" class="text-slate-500">Consulta de insumos e preços corporativos</p>
                 </div>
-                <button onclick="toggleModal()" class="bg-effico-dark hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-3 transition transform hover:scale-105 shadow-lg">
-                    <i class="fas fa-plus-circle text-green-400"></i> NOVO LANÇAMENTO
-                </button>
+                <div class="flex gap-3">
+                    <input type="file" id="inputPlanilha" accept=".csv" class="hidden" onchange="importarCSV(this)">
+                    <button onclick="document.getElementById('inputPlanilha').click()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-xl font-bold flex items-center gap-3 transition border border-slate-300">
+                        <i class="fas fa-file-import text-blue-500"></i> IMPORTAR PLANILHA
+                    </button>
+                    <button onclick="abrirModalCadastro()" class="bg-effico-dark hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-3 transition transform hover:scale-105 shadow-lg">
+                        <i class="fas fa-plus-circle text-green-400"></i> NOVO CADASTRO
+                    </button>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -91,229 +97,193 @@
                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pesquisa Global</label>
                     <div class="relative">
                         <i class="fas fa-search absolute left-3 top-3 text-slate-400"></i>
-                        <input type="text" id="inputBusca" placeholder="Busque por Produto, Fornecedor ou Código..." 
+                        <input type="text" id="inputBusca" placeholder="Busque por Produto, Fornecedor, CC ou Código..." 
                                class="w-full border rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
                     </div>
                 </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ações</label>
-                    <button onclick="carregarDados()" class="w-full bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-xl font-bold text-sm h-10 transition flex items-center justify-center gap-2">
-                        <i class="fas fa-sync"></i> ATUALIZAR TABELA
-                    </button>
+                <div class="space-y-1 text-right">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total de Itens</label>
+                    <div id="contadorRegistros" class="text-2xl font-black text-effico-dark">0</div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-effico-green text-white text-[11px] uppercase tracking-wider">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[1400px]">
+                    <thead class="bg-effico-green text-white text-[10px] uppercase tracking-wider">
                         <tr>
-                            <th class="px-6 py-4">Cód. PRD</th>
-                            <th class="px-6 py-4">Produto</th>
-                            <th class="px-6 py-4">Fornecedor</th>
-                            <th class="px-6 py-4 text-center">Qtd</th>
-                            <th class="px-6 py-4">Unitário</th>
-                            <th class="px-6 py-4">Total</th>
-                            <th class="px-6 py-4">Status</th>
+                            <th class="px-4 py-4">Data</th>
+                            <th class="px-4 py-4">Cotação</th>
+                            <th class="px-4 py-4">ID Origem</th>
+                            <th class="px-4 py-4">Reduzido CC</th>
+                            <th class="px-4 py-4">Centro de Custo</th>
+                            <th class="px-4 py-4">Cód. Prod</th>
+                            <th class="px-4 py-4">Produto</th>
+                            <th class="px-4 py-4">Qtd</th>
+                            <th class="px-4 py-4">Unitário</th>
+                            <th class="px-4 py-4">Total</th>
+                            <th class="px-4 py-4">Fornecedor</th>
+                            <th class="px-4 py-4">Comprador</th>
                         </tr>
                     </thead>
-                    <tbody id="corpoTabela" class="text-sm text-slate-600">
-                        </tbody>
+                    <tbody id="corpoTabela" class="text-xs text-slate-600"></tbody>
                 </table>
             </div>
         </section>
     </main>
 
     <div id="modalCadastro" class="fixed inset-0 bg-effico-dark/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col scale-95 transition-all duration-300">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
             <div class="p-6 border-b flex justify-between items-center bg-slate-50">
-                <div class="flex items-center gap-3">
-                    <div class="w-2 h-8 bg-effico-green rounded-full"></div>
-                    <h3 class="text-xl font-bold text-effico-dark uppercase tracking-tight">Novo Registro - DB_ITENS</h3>
-                </div>
-                <button onclick="toggleModal()" class="text-slate-400 hover:text-red-500 text-2xl transition">&times;</button>
+                <h3 id="modalTitulo" class="text-xl font-bold text-effico-dark uppercase">NOVO REGISTRO</h3>
+                <button onclick="fecharModal()" class="text-slate-400 hover:text-red-500 text-2xl transition">&times;</button>
             </div>
-            
-            <form id="formCadastro" class="p-8 overflow-y-auto">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cód. PRD</label>
-                        <input type="text" name="CODIGO_PRD" required class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data Criação</label>
-                        <input type="date" name="DATA_CRIACAO" id="dataAtual" required class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cód. Cotação</label>
-                        <input type="text" name="COD_COTACAO" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Situação</label>
-                        <select name="SITUACAO" class="w-full border-b-2 border-slate-200 p-2 text-sm outline-none">
-                            <option value="CONCLUIDO">Concluído</option>
-                            <option value="EM ANALISE">Em Análise</option>
-                            <option value="CANCELADO">Cancelado</option>
-                        </select>
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Produto / Serviço</label>
-                        <input type="text" name="PRODUTO" required class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Comprador</label>
-                        <input type="text" name="COMPRADOR" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Centro de Custo</label>
-                        <input type="text" name="CENTRO_DE_CUSTO" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fornecedor</label>
-                        <input type="text" name="FORNECEDOR" class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Quantidade</label>
-                        <input type="number" name="QUANTIDADE" id="inQtd" oninput="calcTotal()" required class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Preço Unitário</label>
-                        <input type="number" step="0.01" name="PRECO_UNITARIO" id="inPreco" oninput="calcTotal()" required class="w-full border-b-2 border-slate-200 p-2 text-sm focus:border-effico-green outline-none bg-transparent">
-                    </div>
-                    
-                    <div class="hidden">
-                        <input type="text" name="ORIGEM" value="Sistema Web">
-                        <input type="number" name="VALOR_TOTAL" id="inTotal">
-                    </div>
-                </div>
-
-                <div class="flex justify-between items-center pt-8 border-t border-slate-100">
-                    <div class="flex flex-col">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Subtotal Calculado</span>
-                        <span id="labelTotal" class="text-3xl font-black text-effico-green">R$ 0,00</span>
-                    </div>
-                    <div class="flex gap-4">
-                        <button type="button" onclick="toggleModal()" class="px-8 py-3 rounded-xl font-bold text-slate-400 hover:bg-slate-50 transition">DESCARTAR</button>
-                        <button type="submit" id="btnSalvar" class="px-10 py-3 rounded-xl bg-effico-green hover:bg-green-700 text-white font-extrabold shadow-lg transition disabled:opacity-50">
-                            SALVAR NA PLANILHA
-                        </button>
-                    </div>
+            <form id="formCadastro" class="p-8 overflow-y-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+                <input type="hidden" name="TABELA_DESTINO" id="tabelaDestino" value="DB_ITENS">
+                
+                <div><label class="label-form">Cód. Cotação</label><input type="text" name="CODCOTACAO" class="input-form"></div>
+                <div><label class="label-form">ID Origem</label><input type="text" name="ID_ORIGEM" class="input-form"></div>
+                <div><label class="label-form">Data</label><input type="date" name="DATA_CRIACAO" id="dataInput" class="input-form"></div>
+                <div><label class="label-form">Cód. Reduzido CC</label><input type="text" name="COD_REDUZIDO_CCUSTO" class="input-form"></div>
+                <div class="md:col-span-2"><label class="label-form">Centro de Custo</label><input type="text" name="CENTRO_DE_CUSTO" class="input-form"></div>
+                <div><label class="label-form">Cód. Produto (PRD)</label><input type="text" name="CODIGOPRD" class="input-form"></div>
+                <div class="md:col-span-2"><label class="label-form">Produto / Insumo</label><input type="text" name="PRODUTO" required class="input-form"></div>
+                <div><label class="label-form">Quantidade</label><input type="number" name="QUANTIDADEORC" id="q" oninput="totalizar()" class="input-form"></div>
+                <div><label class="label-form">Unidade</label><input type="text" name="UNIDADE" class="input-form" placeholder="ex: UN, KG, M"></div>
+                <div><label class="label-form">Preço Unitário</label><input type="number" step="0.0001" name="PRECO_UNITARIO" id="p" oninput="totalizar()" class="input-form"></div>
+                <div class="md:col-span-2"><label class="label-form">Fornecedor</label><input type="text" name="FORNECEDOR" class="input-form"></div>
+                <div><label class="label-form">Comprador</label><input type="text" name="COMPRADOR" class="input-form"></div>
+                
+                <div class="md:col-span-3 pt-6 border-t flex justify-between items-center">
+                    <div class="text-2xl font-black text-effico-green" id="vTotal">R$ 0,00</div>
+                    <button type="submit" id="btnSalvar" class="bg-effico-green text-white px-10 py-3 rounded-xl font-bold hover:bg-green-700 transition shadow-lg">SALVAR NA PLANILHA</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // Substitua pela URL da "Nova Implantação" do seu Apps Script
-        const API_URL = "https://script.google.com/macros/s/AKfycby2rgShk4zrZJq92Bpj2lbrysV9qDaXCYNFwkXvB0CN1hEfoTdUd-XbZ7dT3x3ZGeTt/exec"
-        
-        let dadosOriginais = [];
+        // SUBSTITUA PELA SUA URL DO GOOGLE APPS SCRIPT
+        const API_URL = "https://script.google.com/macros/s/AKfycbwXA_z3lM02-Nvte-z3NFv2CFTcudZVt8epnEbfcegXMxngA9JjnjRYW4Yj9hfuA-qV/exec";
+        let abaAtiva = 'banco';
+        let dadosLocais = [];
 
-        // Inicialização
-        window.onload = () => {
+        window.onload = () => carregarDados();
+
+        function mudarAba(aba) {
+            abaAtiva = aba;
+            document.getElementById('btn-banco').classList.toggle('bg-white/10', aba === 'banco');
+            document.getElementById('btn-licitacao').classList.toggle('bg-white/10', aba === 'licitacao');
+            document.getElementById('tituloPagina').innerText = aba === 'banco' ? 'BANCO DE PREÇOS' : 'LICITAÇÕES';
+            document.getElementById('tabelaDestino').value = aba === 'banco' ? 'DB_ITENS' : 'DB_LICITACOES';
             carregarDados();
-            document.getElementById('dataAtual').valueAsDate = new Date();
-        };
-
-        function toggleModal() {
-            const modal = document.getElementById('modalCadastro');
-            modal.classList.toggle('hidden');
-            modal.classList.toggle('flex');
         }
 
-        function calcTotal() {
-            const q = document.getElementById('inQtd').value || 0;
-            const p = document.getElementById('inPreco').value || 0;
-            const total = q * p;
-            document.getElementById('inTotal').value = total;
-            document.getElementById('labelTotal').innerText = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        }
-
-        // BUSCAR DADOS (doGet)
         async function carregarDados() {
-            const status = document.getElementById('statusConexao');
-            const tabela = document.getElementById('corpoTabela');
+            const corpo = document.getElementById('corpoTabela');
+            corpo.innerHTML = '<tr><td colspan="12" class="p-10 text-center"><span class="loader"></span> Sincronizando dados...</td></tr>';
             
-            status.innerHTML = '<span class="loader"></span> Sincronizando...';
-            tabela.innerHTML = '<tr><td colspan="7" class="p-12 text-center text-slate-400 italic">Buscando informações no banco de dados...</td></tr>';
-
             try {
-                const res = await fetch(API_URL);
-                const data = await res.json();
-                dadosOriginais = data;
-                renderizarTabela(data);
-                status.innerHTML = '<i class="fas fa-check-circle text-green-500"></i> Banco de Dados Atualizado';
-            } catch (err) {
-                status.innerHTML = '<i class="fas fa-times-circle text-red-500"></i> Erro de Conexão';
-                tabela.innerHTML = '<tr><td colspan="7" class="p-12 text-center text-red-400">Não foi possível carregar os dados. Verifique a URL do Script.</td></tr>';
+                const res = await fetch(`${API_URL}?aba=${abaAtiva === 'banco' ? 'DB_ITENS' : 'DB_LICITACOES'}`);
+                dadosLocais = await res.json();
+                renderizar(dadosLocais);
+            } catch (e) {
+                corpo.innerHTML = '<tr><td colspan="12" class="p-10 text-center text-red-500">Erro de conexão com o Banco de Dados.</td></tr>';
             }
         }
 
-        function renderizarTabela(dados) {
-            const tabela = document.getElementById('corpoTabela');
-            if (dados.length === 0) {
-                tabela.innerHTML = '<tr><td colspan="7" class="p-12 text-center">Nenhum registro encontrado em DB_ITENS.</td></tr>';
-                return;
-            }
-
-            tabela.innerHTML = dados.map(item => `
+        function renderizar(dados) {
+            const corpo = document.getElementById('corpoTabela');
+            document.getElementById('contadorRegistros').innerText = dados.length;
+            corpo.innerHTML = dados.map(item => `
                 <tr class="border-b hover:bg-slate-50 transition">
-                    <td class="px-6 py-4 font-mono text-xs font-bold text-slate-400">${item.CODIGO_PRD || '-'}</td>
-                    <td class="px-6 py-4 font-semibold text-effico-dark">${item.PRODUTO || '-'}</td>
-                    <td class="px-6 py-4 text-xs">${item.FORNECEDOR || '-'}</td>
-                    <td class="px-6 py-4 text-center">${item.QUANTIDADE || 0}</td>
-                    <td class="px-6 py-4">R$ ${Number(item.PRECO_UNITARIO || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    <td class="px-6 py-4 font-bold text-effico-green">R$ ${Number(item.VALOR_TOTAL || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    <td class="px-6 py-4">
-                        <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase ${item.SITUACAO === 'CONCLUIDO' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-600'}">
-                            ${item.SITUACAO || 'PENDENTE'}
-                        </span>
-                    </td>
+                    <td class="px-4 py-3">${item.DATA_CRIACAO || '-'}</td>
+                    <td class="px-4 py-3 font-bold text-effico-dark">${item.CODCOTACAO || '-'}</td>
+                    <td class="px-4 py-3 text-[10px]">${item.ID_ORIGEM || '-'}</td>
+                    <td class="px-4 py-3">${item.COD_REDUZIDO_CCUSTO || '-'}</td>
+                    <td class="px-4 py-3 text-[10px] uppercase">${item.CENTRO_DE_CUSTO || '-'}</td>
+                    <td class="px-4 py-3 font-mono text-slate-400">${item.CODIGOPRD || '-'}</td>
+                    <td class="px-4 py-3 font-semibold">${item.PRODUTO || '-'}</td>
+                    <td class="px-4 py-3 text-center">${item.QUANTIDADEORC || 0} <span class="text-[9px] text-slate-400">${item.UNIDADE || ''}</span></td>
+                    <td class="px-4 py-3">R$ ${Number(item.PRECO_UNITARIO || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="px-4 py-3 font-bold text-effico-green">R$ ${Number(item.VALOR_TOTAL || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td class="px-4 py-3 text-[10px] uppercase">${item.FORNECEDOR || '-'}</td>
+                    <td class="px-4 py-3 font-medium">${item.COMPRADOR || '-'}</td>
                 </tr>
-            `).reverse().join(''); // Reverse para ver os mais novos primeiro
+            `).reverse().join('');
         }
 
-        // PESQUISA EM TEMPO REAL
-        document.getElementById('inputBusca').addEventListener('input', (e) => {
-            const termo = e.target.value.toLowerCase();
-            const filtrados = dadosOriginais.filter(i => 
-                String(i.PRODUTO).toLowerCase().includes(termo) || 
-                String(i.FORNECEDOR).toLowerCase().includes(termo) ||
-                String(i.CODIGO_PRD).toLowerCase().includes(termo)
-            );
-            renderizarTabela(filtrados);
-        });
+        function totalizar() {
+            const t = (document.getElementById('q').value || 0) * (document.getElementById('p').value || 0);
+            document.getElementById('vTotal').innerText = t.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+        }
 
-        // SALVAR DADOS (doPost)
+        function abrirModalCadastro() {
+            document.getElementById('modalCadastro').classList.remove('hidden');
+            document.getElementById('modalCadastro').classList.add('flex');
+            document.getElementById('dataInput').valueAsDate = new Date();
+        }
+
+        function fecharModal() {
+            document.getElementById('modalCadastro').classList.add('hidden');
+            document.getElementById('formCadastro').reset();
+        }
+
+        // LÓGICA DE IMPORTAÇÃO CSV CORRIGIDA
+        function importarCSV(input) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const linhas = e.target.result.split('\n');
+                const status = document.getElementById('statusConexao');
+                const destino = document.getElementById('tabelaDestino').value;
+
+                for (let i = 1; i < linhas.length; i++) {
+                    const col = linhas[i].split(/[,;]/); 
+                    if (col.length < 5) continue;
+
+                    status.innerHTML = `<span class="loader"></span> Importando linha ${i}...`;
+
+                    const pld = {
+                        TABELA_DESTINO: destino,
+                        CODIGOPRD: col[0], ID_ORIGEM: col[1], CODCOTACAO: col[2],
+                        DATA_CRIACAO: col[3], COD_REDUZIDO_CCUSTO: col[4],
+                        CENTRO_DE_CUSTO: col[5], PRODUTO: col[7], QUANTIDADEORC: col[8],
+                        UNIDADE: col[9], PRECO_UNITARIO: col[10], VALOR_TOTAL: col[11],
+                        FORNECEDOR: col[12], COMPRADOR: col[13]
+                    };
+
+                    await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(pld) });
+                }
+                alert("Importação Concluída com Sucesso!");
+                carregarDados();
+                status.innerText = "Sincronizado";
+            };
+            reader.readAsText(file);
+        }
+
+        // SALVAR MANUAL
         document.getElementById('formCadastro').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btnSalvar');
             btn.disabled = true;
-            btn.innerHTML = '<span class="loader"></span> PROCESSANDO...';
+            btn.innerText = "PROCESSANDO...";
 
-            const payload = Object.fromEntries(new FormData(e.target));
+            const pld = Object.fromEntries(new FormData(e.target));
+            pld.VALOR_TOTAL = pld.QUANTIDADEORC * pld.PRECO_UNITARIO;
 
-            try {
-                // O fetch POST para Apps Script requer o modo 'no-cors' ou redirecionamento manual
-                // No entanto, para simplificar e garantir que o POST chegue:
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // Apps Script muitas vezes exige isso para POST simples
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+            await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(pld) });
+            
+            fecharModal();
+            carregarDados();
+            btn.disabled = false;
+            btn.innerText = "SALVAR NA PLANILHA";
+        });
 
-                alert("Dados enviados com sucesso!");
-                toggleModal();
-                e.target.reset();
-                carregarDados(); // Recarrega para mostrar o novo item
-            } catch (err) {
-                alert("Erro ao salvar. Tente novamente.");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = 'SALVAR COTAÇÃO';
-            }
+        // BUSCA EM TEMPO REAL
+        document.getElementById('inputBusca').addEventListener('input', (e) => {
+            const t = e.target.value.toLowerCase();
+            const f = dadosLocais.filter(i => Object.values(i).some(v => String(v).toLowerCase().includes(t)));
+            renderizar(f);
         });
     </script>
 </body>
