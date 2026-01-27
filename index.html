@@ -116,13 +116,13 @@
             corpo.innerHTML = exibicao.map(item => `
                 <tr class="border-b hover:bg-slate-50 transition">
                     <td class="px-4 py-3">${item.DATA_CRIACAO || ''}</td>
-                    <td class="px-4 py-3 font-bold">${item.CODCOTACAO || ''}</td>
                     <td class="px-4 py-3">${item.ID_ORIGEM || ''}</td>
                     <td class="px-4 py-3">${item.COD_REDUZIDO_CCUSTO || ''}</td>
                     <td class="px-4 py-3 uppercase text-[10px]">${item.CENTRO_DE_CUSTO || ''}</td>
                     <td class="px-4 py-3 font-mono">${item.CODIGOPRD || ''}</td>
                     <td class="px-4 py-3 font-semibold">${item.PRODUTO || ''}</td>
                     <td class="px-4 py-3 text-center">${item.QUANTIDADEORC || 0}</td>
+                    <td class= "px-4 py-3 text-center">${item.UNIDADE ||0}</td>
                     <td class="px-4 py-3">R$ ${Number(item.PRECO_UNITARIO || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                     <td class="px-4 py-3 font-bold text-effico-green">R$ ${Number(item.VALOR_TOTAL || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                     <td class="px-4 py-3 uppercase text-[10px]">${item.FORNECEDOR || ''}</td>
