@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxfNa90-sGGdqavuyTZh0bNHoblZ1dlXkVJZ5kcS9Kqcp7ElGJRSbgXmEIqpdqS3No_UA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxND5h9vpyq3YvLKXGuv2NJgxzPS5-_Je9Xxk4x-bT23nSf146HxnV-1y0D47rxFSTWQg/exec";
 
 let abaAtiva = 'banco';
 let dadosGlobais = [];
