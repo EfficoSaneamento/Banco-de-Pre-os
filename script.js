@@ -1,107 +1,77 @@
-// ATENÇÃO: Substitua pela sua URL de implantação atualizada do Google
-const API_URL = "https://script.google.com/macros/s/AKfycbzgeUvx3Q2LNp5KUoBXe6GvAVHkJrF2giBeLKP1gxQj6OJUcC03HngXRw1MVc2wkK7B6Q/exec"; 
+// URL de implantação do Google Apps Script
+const API_URL = "https://script.google.com/macros/s/AKfycbz292QQuYA84hm4MzZvOLsO5YY41GmXYoQd7jLB-dfVU2qaqmn-ghZ0H9-5eP9B1g8gpA/exec"; 
 
 let abaAtiva = ''; 
 let dadosGlobais = [];
-let estaCarregando = false; 
+let carregando = false; 
 
 /**
- * Troca de aba e busca dados específicos
+ * Troca de aba e carrega os dados específicos
  */
 async function mudarAba(aba) {
-    // Impede o recarregamento se já estiver carregando ou se for a mesma aba
-    if (estaCarregando || abaAtiva === aba) return;
+    if (carregando || abaAtiva === aba) return; 
     
     abaAtiva = aba;
-    estaCarregando = true;
+    carregando = true;
 
-    // 1. Atualiza Visual da Interface
-    const titulos = { 
-        'banco': 'BANCO DE PREÇOS', 
-        'licitacao': 'LICITAÇÕES', 
-        'solicitacao': 'SOLICITAÇÃO DE COMPRAS' 
-    };
-    document.getElementById('tituloPagina').innerText = titulos[aba] || "GESTÃO DE SUPRIMENTOS";
+    // UI: Feedback Visual
+    const titulos = { 'banco': 'DB_ITENS', 'licitacao': 'DB_LICITACOES', 'solicitacao': 'DB_SOLICITACOES' };
+    document.getElementById('tituloPagina').innerText = titulos[aba].replace('DB_', '').replace('_', ' ');
     
-    // Destaca o botão na barra lateral
-    document.querySelectorAll('nav button').forEach(btn => {
-        btn.classList.remove('bg-white/10', 'border-l-4', 'border-green-400');
-    });
-    const btnAtivo = document.getElementById(`btn-${aba}`);
-    if (btnAtivo) btnAtivo.classList.add('bg-white/10', 'border-l-4', 'border-green-400');
-
-    // 2. Prepara a Tabela para novos dados
     const corpo = document.getElementById('corpoTabela');
-    corpo.innerHTML = '<tr><td colspan="12" class="p-10 text-center"><div class="loader"></div><p class="mt-2 text-slate-500 italic">Buscando dados em ' + aba + '...</p></td></tr>';
-
-    // 3. Busca os dados no Google
-    const targets = { 
-        'banco': 'DB_ITENS', 
-        'licitacao': 'DB_LICITACOES', 
-        'solicitacao': 'DB_SOLICITACOES' 
-    };
+    corpo.innerHTML = '<tr><td colspan="12" class="p-10 text-center"><div class="loader"></div><p>Sincronizando dados...</p></td></tr>';
 
     try {
-        const response = await fetch(`${API_URL}?aba=${targets[aba]}`);
-        if (!response.ok) throw new Error("Erro na comunicação com o Google.");
-        
+        const response = await fetch(`${API_URL}?aba=${titulos[aba]}`);
         const dados = await response.json();
-        dadosGlobais = Array.isArray(dados) ? dados : [];
         
+        dadosGlobais = Array.isArray(dados) ? dados : [];
         renderizarTabela(dadosGlobais);
-        document.getElementById('statusConexao').innerText = "Sincronizado: " + targets[aba];
+        document.getElementById('statusConexao').innerText = "Sincronizado: " + titulos[aba];
     } catch (error) {
-        console.error("Erro na busca:", error);
-        document.getElementById('statusConexao').innerText = "Erro de Conexão";
-        corpo.innerHTML = '<tr><td colspan="12" class="p-10 text-center text-red-500 font-bold">Falha ao carregar a aba ' + aba + '. Verifique a publicação do Script.</td></tr>';
+        document.getElementById('statusConexao').innerText = "Erro de Sincronização";
+        corpo.innerHTML = '<tr><td colspan="12" class="p-10 text-center text-red-500">Erro ao carregar dados. Verifique a internet.</td></tr>';
     } finally {
-        estaCarregando = false;
+        carregando = false;
     }
 }
 
 /**
- * Desenha as linhas da tabela com base nos dados recebidos
+ * Renderiza a tabela mapeando as colunas específicas enviadas pelo usuário
  */
 function renderizarTabela(dados) {
     const corpo = document.getElementById('corpoTabela');
     document.getElementById('contadorRegistros').innerText = dados.length;
 
-    if (dados.length === 0) {
-        corpo.innerHTML = '<tr><td colspan="12" class="p-10 text-center">Nenhum registro encontrado.</td></tr>';
-        return;
-    }
+    corpo.innerHTML = dados.slice().reverse().map(item => {
+        // Mapeamento dinâmico para garantir que os dados apareçam
+        const data = item.DATA_CRIACAO || item.DATA_DE_SOLICITACAO || "-";
+        const ident = item.CODIGO_PRD || item.IDENTIFICADOR || "-";
+        const cc_cod = item.COD_REDUZIDO_CCUSTO || item.CENTRO_DE_CUSTO || "-";
+        const cc_nome = item.CENTRO_DE_CUSTO || item.DESCRITIVO_CENTRO_DE_CUSTO || "-";
+        const prod = item.PRODUTO || item.DESCRICAO_DO_PRODUTO || "-";
+        const responsavel = item.COMPRADOR || item.USUARIO_CRIACAO || "-";
+        
+        const valorUnit = parseFloat(item.PRECO_UNITARIO || 0);
+        const valorTotal = parseFloat(item.VALOR_TOTAL || 0);
 
-    // Gerar HTML de todas as linhas (exibindo os mais recentes primeiro)
-    corpo.innerHTML = dados.slice().reverse().map(item => `
-        <tr class="border-b hover:bg-slate-50 transition">
-            <td class="px-4 py-3">${item.DATA_CRIACAO || item.DATA_ENVIO || '-'}</td>
-            <td class="px-4 py-3 font-bold">${item.CODCOTACAO || '-'}</td>
-            <td class="px-4 py-3">${item.COD_REDUZIDO_CCUSTO || '-'}</td>
-            <td class="px-4 py-3 text-[10px] max-w-xs truncate">${item.DESCRICAO_CC || item.CENTRO_DE_CUSTO || '-'}</td>
-            <td class="px-4 py-3">${item.ID_ITEM || '-'}</td>
-            <td class="px-4 py-3 font-medium">${item.PRODUTO || '-'}</td>
-            <td class="px-4 py-3">${item.QUANTIDADE || '0'}</td>
-            <td class="px-4 py-3">${item.UNIDADE || '-'}</td>
-            <td class="px-4 py-3">R$ ${parseFloat(item.PRECO_UNITARIO || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-            <td class="px-4 py-3 font-bold text-green-700">R$ ${parseFloat(item.VALOR_TOTAL || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-            <td class="px-4 py-3 uppercase text-[10px]">${item.FORNECEDOR || '-'}</td>
-            <td class="px-4 py-3">${item.COMPRADOR || item.COLABORADOR || '-'}</td>
-        </tr>
-    `).join('');
+        return `
+        <tr class="border-b hover:bg-slate-50 transition text-[13px]">
+            <td class="px-4 py-2">${data}</td>
+            <td class="px-4 py-2 font-bold">${ident}</td>
+            <td class="px-4 py-2">${cc_cod}</td>
+            <td class="px-4 py-2 truncate max-w-[150px]">${cc_nome}</td>
+            <td class="px-4 py-2">${item.ID_ORIGEM || item.DATA_LIMITE || "-"}</td>
+            <td class="px-4 py-2 font-medium">${prod}</td>
+            <td class="px-4 py-2">${item.QUANTIDADE || "0"}</td>
+            <td class="px-4 py-2">${item.UNIDADE || item.ORC || "-"}</td>
+            <td class="px-4 py-2">R$ ${valorUnit.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+            <td class="px-4 py-2 font-bold text-green-700">R$ ${valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+            <td class="px-4 py-2 truncate max-w-[120px]">${item.FORNECEDOR || item.OBSERVACAO_DO_ITEM || "-"}</td>
+            <td class="px-4 py-2">${responsavel}</td>
+        </tr>`;
+    }).join('');
 }
 
-// Configuração da Busca Global com atraso (debounce) para não travar o PC
-let timeoutBusca;
-document.getElementById('inputBusca').addEventListener('input', (e) => {
-    clearTimeout(timeoutBusca);
-    timeoutBusca = setTimeout(() => {
-        const termo = e.target.value.toLowerCase();
-        const filtrados = dadosGlobais.filter(item => 
-            JSON.stringify(item).toLowerCase().includes(termo)
-        );
-        renderizarTabela(filtrados);
-    }, 300);
-});
-
-// Inicialização: Carrega a primeira aba assim que a página abrir
+// Inicia na aba de banco por padrão
 document.addEventListener('DOMContentLoaded', () => mudarAba('banco'));
