@@ -3,92 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Effico | Gestão de Suprimentos</title>
+    <title>Portal de Suprimentos | Gestão SLA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --effico-dark: #1e3a5a; --effico-green: #4a7c59; }
-        .bg-effico-dark { background-color: var(--effico-dark); }
-        .bg-effico-green { background-color: var(--effico-green); }
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--effico-green); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Custom scrollbar para parecer software */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-slate-100 flex h-screen font-sans overflow-hidden">
+<body class="bg-slate-50 font-sans text-slate-900">
 
-    <aside class="w-64 bg-effico-dark text-white flex flex-col shadow-xl">
-        <div class="p-6 flex items-center gap-3 border-b border-white/10">
-            <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg"><i class="fas fa-droplet text-white text-xl"></i></div>
-            <div>
-                <h1 class="font-bold text-xl leading-none tracking-tight">EFFICO</h1>
-                <p class="text-[10px] uppercase tracking-widest text-green-400 font-semibold">Saneamento</p>
+    <div class="flex min-h-screen">
+        <aside class="w-64 bg-slate-900 text-white flex-shrink-0 hidden md:flex flex-col">
+            <div class="p-6">
+                <h1 class="text-xl font-black tracking-tighter text-green-400">SUPRI<span class="text-white">FLOW</span></h1>
+                <p class="text-[10px] text-slate-400 uppercase tracking-widest">Gestão de Suprimentos</p>
             </div>
-        </div>
-        <nav class="mt-6 flex-1 px-4 space-y-3">
-            <button onclick="mudarAba('banco')" id="btn-banco" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition text-left"><i class="fas fa-search-dollar w-5"></i> Banco de Preços</button>
-            <button onclick="mudarAba('licitacao')" id="btn-licitacao" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition text-left"><i class="fas fa-file-contract w-5"></i> Licitações</button>
-            <button onclick="mudarAba('solicitacao')" id="btn-solicitacao" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition text-left"><i class="fas fa-shopping-cart w-5"></i> Solicitações</button>
-        </nav>
-    </aside>
+            
+            <nav class="mt-6 flex-1">
+                <button onclick="mudarAba('banco')" id="btn-banco" class="w-full flex items-center gap-3 px-6 py-4 hover:bg-slate-800 transition border-l-4 border-transparent">
+                    <i class="fas fa-database w-5"></i> Banco de Preços
+                </button>
+                <button onclick="mudarAba('solicitacao')" id="btn-solicitacao" class="w-full flex items-center gap-3 px-6 py-4 hover:bg-slate-800 transition border-l-4 border-transparent">
+                    <i class="fas fa-file-invoice-dollar w-5"></i> Solicitações
+                </button>
+                <button onclick="mudarAba('licitacao')" id="btn-licitacao" class="w-full flex items-center gap-3 px-6 py-4 hover:bg-slate-800 transition border-l-4 border-transparent">
+                    <i class="fas fa-gavel w-5"></i> Licitações
+                </button>
+            </nav>
 
-    <main class="flex-1 flex flex-col bg-white overflow-hidden">
-        <header class="h-16 border-b flex items-center px-8 justify-between bg-white shadow-sm z-10">
-            <div class="flex items-center gap-2 text-sm font-medium text-slate-600">
-                <i class="fas fa-database text-slate-400"></i> <span id="statusConexao">Iniciando...</span>
+            <div class="p-6 border-t border-slate-800">
+                <div id="statusConexao" class="text-[10px] text-slate-500 flex items-center gap-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full"></span> Sistema Online
+                </div>
             </div>
-            <div class="flex items-center gap-3">
-                <span class="text-sm font-bold text-effico-dark">Portal de Suprimentos</span>
-                <div class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center"><i class="fas fa-user text-slate-500"></i></div>
-            </div>
-        </header>
+        </aside>
 
-        <section class="p-8 overflow-y-auto flex-1">
-            <div class="flex justify-between items-end mb-8">
+        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+            
+            <div class="flex justify-between items-center mb-8">
                 <div>
-                    <h2 id="tituloPagina" class="text-3xl font-extrabold text-effico-dark tracking-tight uppercase">BANCO DE PREÇOS</h2>
-                    <p class="text-slate-500 italic">Limpeza de caracteres especiais ativa (v4.2)</p>
+                    <h2 id="tituloPagina" class="text-2xl font-bold text-slate-800 uppercase tracking-tight">Banco de Preços</h2>
+                    <p class="text-sm text-slate-500">Visualizando <span id="contadorRegistros" class="font-bold">0</span> registros encontrados.</p>
                 </div>
-                <div class="flex gap-3">
-                    <input type="file" id="inputPlanilha" accept=".csv,.txt,.xlsx,.xls" class="hidden" title="Importar planilha" onchange="importarDados(this)">
-                    <button onclick="document.getElementById('inputPlanilha').click()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-xl font-bold flex items-center gap-3 transition border border-slate-300">
-                        <i class="fas fa-broom text-blue-500"></i> IMPORTAR
-                    </button>
-                    <button class="bg-effico-dark hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-3 transition transform hover:scale-105 shadow-lg">
-                        <i class="fas fa-plus-circle text-green-400"></i> NOVO
+                <div class="flex gap-2">
+                    <button onclick="exportarExcel()" class="bg-white border text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition shadow-sm">
+                        <i class="fas fa-download mr-2 text-slate-400"></i> Exportar
                     </button>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                <div class="md:col-span-2"><input type="text" id="inputBusca" placeholder="Pesquisar..." class="w-full border rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-green-500"></div>
-                <div class="text-right"><label class="text-[10px] font-bold text-slate-400 uppercase">Registros</label><div id="contadorRegistros" class="text-2xl font-black">0</div></div>
+            <div id="dashboard" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 hidden">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Pendentes</p>
+                    <h3 id="dash-pendentes" class="text-3xl font-black text-blue-600">0</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Lead Time Médio</p>
+                    <h3 class="text-3xl font-black text-slate-800"><span id="dash-leadtime">0</span><small class="text-sm font-normal text-slate-400 ml-1">dias</small></h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">SLA de Entrega</p>
+                    <h3 id="dash-sla" class="text-3xl font-black text-green-500">0%</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Em Cotação</p>
+                    <h3 id="dash-enviados" class="text-3xl font-black text-yellow-500">0</h3>
+                </div>
             </div>
 
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
-                <table class="w-full text-left border-collapse min-w-[1400px]">
-                    <thead class="bg-effico-green text-white text-[10px] uppercase tracking-wider">
-                        <tr>
-                            <th class="px-4 py-4">Data</th>
-                            <th class="px-4 py-4">Cotação</th>
-                            <th class="px-4 py-4">Cod. CC</th>
-                            <th class="px-4 py-4">Centro de Custo</th>
-                            <th class="px-4 py-4">ID Item</th>
-                            <th class="px-4 py-4">Descrição do Item</th>
-                            <th class="px-4 py-4">Qtd</th>
-                            <th class="px-4 py-4">Unid</th>
-                            <th class="px-4 py-4">Vl. Unitário</th>
-                            <th class="px-4 py-4">Vl. Total</th>
-                            <th class="px-4 py-4">Fornecedor</th>
-                            <th class="px-4 py-4">Comprador</th>
-                        </tr>
-                    </thead>
-                    <tbody id="corpoTabela" class="text-xs text-slate-600"></tbody>
-                </table>
-            </div>
-        </section>
-    </main>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-6">
+                <div class="flex flex-wrap gap-6 items-end">
+                    <div class="flex-1 min-w-[250px]">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Pesquisa Global</label>
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-3 text-slate-300"></i>
+                            <input type="text" id="inputBusca" placeholder="Ex: Produto, ID ou Fornecedor..." 
+                                class="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-green-400 transition outline-none">
+                        </div>
+                    </div>
+                    
+                    <div class="w-48">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Centro de Custo</label>
+                        <input type="text" id="filtroCC" placeholder="Filtrar CC..." 
+                            class="w-full px-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-green-400 transition outline-none">
+                    </div>
 
-    <script src="script.js" defer></script>
+                    <div class="flex gap-4 items-center bg-slate-50 p-2 rounded-xl border border-dashed border-slate-200">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase px-2 border-r border-slate-200 mr-2">Filtro Equipe</label>
+                        <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-600 hover:text-slate-900">
+                            <input type="checkbox" class="filtro-comprador w-4 h-4 rounded border-slate-300 text-green-500 focus:ring-green-500" value="Flavio Matos" checked onchange="filtrarDados()"> Flavio
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-600 hover:text-slate-900">
+                            <input type="checkbox" class="filtro-comprador w-4 h-4 rounded border-slate-300 text-green-500 focus:ring-green-500" value="Pedro Prugoveschi" checked onchange="filtrarDados()"> Pedro
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-600 hover:text-slate-900">
+                            <input type="checkbox" class="filtro-comprador w-4 h-4 rounded border-slate-300 text-green-500 focus:ring-green-500" value="Patricia Yoshimoto" checked onchange="filtrarDados()"> Patricia
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 border-b border-slate-100">
+                            <tr class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                </tr>
+                        </thead>
+                        <tbody id="corpoTabela" class="text-slate-600">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
