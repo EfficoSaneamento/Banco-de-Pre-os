@@ -17,7 +17,7 @@ async function mudarAba(aba) {
     document.getElementById(`btn-${aba}`).classList.add('bg-white/10');
 
     // UI: Títulos
-    document.getElementById('tituloPagina').innerText = aba === 'banco' ? "BANCO DE PREÇOS" : "LICITAÇÕES" "SOLICITAÇÃO DE COMPRAS"
+    document.getElementById('tituloPagina').innerText = aba === 'banco' ? "BANCO DE PREÇOS" : "LICITAÇÕES" "SOLICITAÇÃO DE COMPRAS";
     
     await carregarDados();
 }
