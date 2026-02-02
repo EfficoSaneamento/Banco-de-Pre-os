@@ -17,7 +17,7 @@ async function mudarAba(aba) {
     document.getElementById(`btn-${aba}`).classList.add('bg-white/10');
 
     // UI: Títulos
-    document.getElementById('tituloPagina').innerText = aba === 'banco' ? "BANCO DE PREÇOS" : "LICITAÇÕES";
+    document.getElementById('tituloPagina').innerText = aba === 'banco' ? "BANCO DE PREÇOS" : "LICITAÇÕES" "SOLICITAÇÃO DE COMPRAS"
     
     await carregarDados();
 }
@@ -29,7 +29,7 @@ async function carregarDados() {
     
     corpo.innerHTML = '<tr><td colspan="12" class="p-10 text-center"><div class="loader"></div></td></tr>';
     
-    const target = abaAtiva === 'banco' ? 'DB_ITENS' : 'DB_LICITACOES';
+    const target = abaAtiva === 'banco' ? 'DB_ITENS' : 'DB_LICITACOES' : 'DB_SOLICITACOES' ;
 
     try {
         const response = await fetch(`${API_URL}?aba=${target}`);
@@ -80,7 +80,7 @@ async function importarDados(input) {
 }
 
 async function enviarParaGoogle(linhas) {
-    const target = abaAtiva === 'banco' ? 'DB_ITENS' : 'DB_LICITACOES';
+    const target = abaAtiva === 'banco' ? 'DB_ITENS' : 'DB_LICITACOES' : 'DB_SOLICITACOES' 
     let processados = 0;
 
     for (let row of linhas) {
