@@ -1,83 +1,96 @@
-// Substitua pela URL que aparece no seu print (botão azul de copiar)
-const API_URL = "https://script.google.com/macros/s/AKfycbxND5h9vpyq3YvLKXGuv2NJgxzPS5-_Je9Xxk4x-bT23nSf146HxnV-1y0D47rxFSTWQg/exec"; 
+// ATENÇÃO: Substitua pela sua URL de implantação atualizada do Google
+const API_URL = "https://script.google.com/macros/s/AKfycbzgeUvx3Q2LNp5KUoBXe6GvAVHkJrF2giBeLKP1gxQj6OJUcC03HngXRw1MVc2wkK7B6Q/exec"; 
 
-let abaAtiva = 'banco';
+let abaAtiva = ''; 
 let dadosGlobais = [];
+let estaCarregando = false; 
 
-// Função para formatar moeda com segurança
-const formatarMoeda = (valor) => {
-    const num = parseFloat(valor) || 0;
-    return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-};
-
+/**
+ * Troca de aba e busca dados específicos
+ */
 async function mudarAba(aba) {
-    if (abaAtiva === aba && dadosGlobais.length > 0) return; // Evita recarregar a mesma aba sem necessidade
+    // Impede o recarregamento se já estiver carregando ou se for a mesma aba
+    if (estaCarregando || abaAtiva === aba) return;
     
     abaAtiva = aba;
+    estaCarregando = true;
+
+    // 1. Atualiza Visual da Interface
+    const titulos = { 
+        'banco': 'BANCO DE PREÇOS', 
+        'licitacao': 'LICITAÇÕES', 
+        'solicitacao': 'SOLICITAÇÃO DE COMPRAS' 
+    };
+    document.getElementById('tituloPagina').innerText = titulos[aba] || "GESTÃO DE SUPRIMENTOS";
     
-    // UI: Títulos e Botões
-    const titulos = { 'banco': 'BANCO DE PREÇOS', 'licitacao': 'LICITAÇÕES', 'solicitacao': 'SOLICITAÇÃO DE COMPRAS' };
-    document.getElementById('tituloPagina').innerText = titulos[aba] || "SUPRIMENTOS";
-    
-    document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('bg-white/10', 'border-l-4', 'border-green-400'));
+    // Destaca o botão na barra lateral
+    document.querySelectorAll('nav button').forEach(btn => {
+        btn.classList.remove('bg-white/10', 'border-l-4', 'border-green-400');
+    });
     const btnAtivo = document.getElementById(`btn-${aba}`);
     if (btnAtivo) btnAtivo.classList.add('bg-white/10', 'border-l-4', 'border-green-400');
 
-    await carregarDados();
-}
-
-async function carregarDados() {
+    // 2. Prepara a Tabela para novos dados
     const corpo = document.getElementById('corpoTabela');
-    const status = document.getElementById('statusConexao');
-    const targets = { 'banco': 'DB_ITENS', 'licitacao': 'DB_LICITACOES', 'solicitacao': 'DB_SOLICITACOES' };
+    corpo.innerHTML = '<tr><td colspan="12" class="p-10 text-center"><div class="loader"></div><p class="mt-2 text-slate-500 italic">Buscando dados em ' + aba + '...</p></td></tr>';
 
-    corpo.innerHTML = '<tr><td colspan="12" class="p-10 text-center"><div class="loader"></div><p>Carregando dados...</p></td></tr>';
+    // 3. Busca os dados no Google
+    const targets = { 
+        'banco': 'DB_ITENS', 
+        'licitacao': 'DB_LICITACOES', 
+        'solicitacao': 'DB_SOLICITACOES' 
+    };
 
     try {
-        const response = await fetch(`${API_URL}?aba=${targets[abaAtiva]}`);
-        if (!response.ok) throw new Error("Erro na rede");
+        const response = await fetch(`${API_URL}?aba=${targets[aba]}`);
+        if (!response.ok) throw new Error("Erro na comunicação com o Google.");
         
         const dados = await response.json();
         dadosGlobais = Array.isArray(dados) ? dados : [];
         
         renderizarTabela(dadosGlobais);
-        status.innerText = "Sincronizado";
+        document.getElementById('statusConexao').innerText = "Sincronizado: " + targets[aba];
     } catch (error) {
-        console.error("Erro:", error);
-        status.innerText = "Erro de Conexão";
-        corpo.innerHTML = '<tr><td colspan="12" class="p-10 text-center text-red-500 font-bold">Não foi possível carregar os dados. Verifique a internet ou o Script.</td></tr>';
+        console.error("Erro na busca:", error);
+        document.getElementById('statusConexao').innerText = "Erro de Conexão";
+        corpo.innerHTML = '<tr><td colspan="12" class="p-10 text-center text-red-500 font-bold">Falha ao carregar a aba ' + aba + '. Verifique a publicação do Script.</td></tr>';
+    } finally {
+        estaCarregando = false;
     }
 }
 
+/**
+ * Desenha as linhas da tabela com base nos dados recebidos
+ */
 function renderizarTabela(dados) {
     const corpo = document.getElementById('corpoTabela');
     document.getElementById('contadorRegistros').innerText = dados.length;
 
     if (dados.length === 0) {
-        corpo.innerHTML = '<tr><td colspan="12" class="p-10 text-center">Nenhum registro encontrado nesta aba.</td></tr>';
+        corpo.innerHTML = '<tr><td colspan="12" class="p-10 text-center">Nenhum registro encontrado.</td></tr>';
         return;
     }
 
-    // Usamos um fragmento para melhorar a performance e não travar o navegador
+    // Gerar HTML de todas as linhas (exibindo os mais recentes primeiro)
     corpo.innerHTML = dados.slice().reverse().map(item => `
         <tr class="border-b hover:bg-slate-50 transition">
-            <td class="px-4 py-3">${item.DATA_CRIACAO || '-'}</td>
+            <td class="px-4 py-3">${item.DATA_CRIACAO || item.DATA_ENVIO || '-'}</td>
             <td class="px-4 py-3 font-bold">${item.CODCOTACAO || '-'}</td>
             <td class="px-4 py-3">${item.COD_REDUZIDO_CCUSTO || '-'}</td>
-            <td class="px-4 py-3 text-[10px] max-w-xs truncate">${item.DESCRICAO_CC || '-'}</td>
+            <td class="px-4 py-3 text-[10px] max-w-xs truncate">${item.DESCRICAO_CC || item.CENTRO_DE_CUSTO || '-'}</td>
             <td class="px-4 py-3">${item.ID_ITEM || '-'}</td>
             <td class="px-4 py-3 font-medium">${item.PRODUTO || '-'}</td>
             <td class="px-4 py-3">${item.QUANTIDADE || '0'}</td>
             <td class="px-4 py-3">${item.UNIDADE || '-'}</td>
-            <td class="px-4 py-3">${formatarMoeda(item.PRECO_UNITARIO)}</td>
-            <td class="px-4 py-3 font-bold text-green-700">${formatarMoeda(item.VALOR_TOTAL)}</td>
+            <td class="px-4 py-3">R$ ${parseFloat(item.PRECO_UNITARIO || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+            <td class="px-4 py-3 font-bold text-green-700">R$ ${parseFloat(item.VALOR_TOTAL || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
             <td class="px-4 py-3 uppercase text-[10px]">${item.FORNECEDOR || '-'}</td>
-            <td class="px-4 py-3">${item.COMPRADOR || '-'}</td>
+            <td class="px-4 py-3">${item.COMPRADOR || item.COLABORADOR || '-'}</td>
         </tr>
     `).join('');
 }
 
-// Busca (Debounce simples para não travar ao digitar)
+// Configuração da Busca Global com atraso (debounce) para não travar o PC
 let timeoutBusca;
 document.getElementById('inputBusca').addEventListener('input', (e) => {
     clearTimeout(timeoutBusca);
@@ -90,5 +103,5 @@ document.getElementById('inputBusca').addEventListener('input', (e) => {
     }, 300);
 });
 
-// Inicialização única
-window.onload = () => mudarAba('banco');
+// Inicialização: Carrega a primeira aba assim que a página abrir
+document.addEventListener('DOMContentLoaded', () => mudarAba('banco'));
