@@ -1,58 +1,165 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>CORE | Solicitação de Compras</title>
+    <meta charset="UTF-8" />
+    <title>CORE – Gestão de Solicitações</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
+    <!-- FontAwesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+    <!-- SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
+
 <body class="bg-slate-100 flex h-screen">
 
 <!-- SIDEBAR -->
 <aside class="w-64 bg-slate-900 text-white flex flex-col">
     <div class="p-4 border-b border-white/10 flex items-center gap-3">
-        <i class="fas fa-cart-plus text-green-400 text-xl"></i>
-        <span class="font-bold text-lg">CORE</span>
+        <span class="text-lg font-bold">CORE</span>
     </div>
 
-    <nav class="mt-4 px-3">
-        <div class="bg-white/10 p-3 rounded-lg flex items-center gap-3">
-            <i class="fas fa-file-invoice"></i>
-            Solicitação de Compras
-        </div>
+    <nav class="mt-4 flex-1 px-3 space-y-2">
+
+        <button onclick="mudarAba('solicitacoes')" class="btn-aba">
+            <i class="fas fa-list w-5"></i>
+            Solicitações
+        </button>
+
+        <button onclick="mudarAba('avaliacao')" class="btn-aba">
+            <i class="fas fa-star w-5"></i>
+            Avaliação do Fornecedor
+        </button>
+
+        <button onclick="mudarAba('dashboard')" class="btn-aba">
+            <i class="fas fa-chart-bar w-5"></i>
+            Dashboard
+        </button>
+
     </nav>
 </aside>
 
 <!-- CONTEÚDO -->
 <main class="flex-1 p-6 overflow-auto">
 
-    <h2 class="text-2xl font-bold mb-4">
-        SOLICITAÇÃO DE COMPRAS
-    </h2>
+    <!-- SOLICITAÇÕES -->
+    <section id="aba-solicitacoes">
+        <h2 class="text-2xl font-bold mb-4">Solicitações</h2>
 
-    <div class="bg-white rounded-lg shadow overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-slate-200">
+        <div class="mb-4 flex gap-4">
+            <input type="file" id="inputArquivo" accept=".xlsx,.xls"
+                   class="border p-2 rounded" />
+
+            <select id="filtroComprador" class="border p-2 rounded">
+                <option value="">Todos compradores</option>
+                <option>Flávio</option>
+                <option>Patrícia</option>
+                <option>Leonardo</option>
+                <option>Pedro</option>
+            </select>
+
+            <select id="filtroStatus" class="border p-2 rounded">
+                <option value="">Todos status</option>
+                <option>Pendente</option>
+                <option>Em andamento</option>
+                <option>Concluído</option>
+            </select>
+        </div>
+
+        <div class="bg-white rounded shadow overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-200">
                 <tr>
-                    <th class="p-3">Identificador</th>
-                    <th class="p-3">Data da Solicitação</th>
-                    <th class="p-3">Data Limite</th>
-                    <th class="p-3">Centro de Custo</th>
-                    <th class="p-3">Item</th>
-                    <th class="p-3">Observação</th>
-                    <th class="p-3">Quantidade</th>
-                    <th class="p-3">Solicitante</th>
+                    <th class="p-2">ID</th>
+                    <th>Data</th>
+                    <th>Item</th>
+                    <th>Quantidade</th>
+                    <th>Comprador</th>
+                    <th>Status</th>
+                    <th>Ação</th>
                 </tr>
-            </thead>
-            <tbody id="corpoTabela"></tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody id="tabelaSolicitacoes"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- AVALIAÇÃO -->
+    <section id="aba-avaliacao" class="hidden">
+        <h2 class="text-2xl font-bold mb-4">Avaliação do Fornecedor</h2>
+
+        <div class="bg-white rounded shadow p-4">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-200">
+                <tr>
+                    <th class="p-2">Fornecedor</th>
+                    <th>Comprador</th>
+                    <th>Data Finalização</th>
+                    <th>Qualidade</th>
+                    <th>Prazo</th>
+                    <th>Atendimento</th>
+                </tr>
+                </thead>
+                <tbody id="tabelaAvaliacao"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="aba-dashboard" class="hidden">
+        <h2 class="text-2xl font-bold mb-4">Dashboard</h2>
+
+        <div id="bloqueioDashboard" class="bg-white p-6 rounded shadow max-w-sm">
+            <p class="mb-2 font-semibold">Acesso restrito</p>
+            <input id="senhaDashboard" type="password"
+                   class="border p-2 rounded w-full mb-2"
+                   placeholder="Senha" />
+            <button onclick="validarDashboard()"
+                    class="bg-slate-900 text-white px-4 py-2 rounded w-full">
+                Entrar
+            </button>
+        </div>
+
+        <div id="conteudoDashboard" class="hidden grid grid-cols-2 gap-4">
+            <div class="bg-green-100 p-4 rounded">
+                <h3 class="font-bold">Concluídas</h3>
+                <p id="dashConcluidas" class="text-2xl"></p>
+            </div>
+
+            <div class="bg-yellow-100 p-4 rounded">
+                <h3 class="font-bold">Em andamento</h3>
+                <p id="dashAndamento" class="text-2xl"></p>
+            </div>
+
+            <div class="bg-red-100 p-4 rounded">
+                <h3 class="font-bold">Pendentes</h3>
+                <p id="dashPendentes" class="text-2xl"></p>
+            </div>
+        </div>
+    </section>
 
 </main>
 
 <script src="script.js"></script>
+
+<style>
+    .btn-aba {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 8px;
+        transition: 0.2s;
+    }
+    .btn-aba:hover {
+        background: rgba(255,255,255,0.1);
+    }
+</style>
+
 </body>
 </html>
