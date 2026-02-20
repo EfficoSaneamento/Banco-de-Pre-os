@@ -1,4 +1,4 @@
-const URL_API = 'https://script.google.com/macros/s/AKfycbxYeYJCmJRDyn0wI0or4CjupMEqInFwJF8QgLG0_cRe1rGm2LXpQ1d8CcaiGZd6iKm9VQ/exec';
+const URL_API = 'https://script.google.com/macros/s/AKfycbynSax6Q0OuPIiHvkOtQ_BYIuQh15kZtLZSWPUbRKxPboKFNPi4lTO2IGBKhpxYXprK/exec';
 
 let abaAtiva = 'banco';
 
@@ -21,8 +21,8 @@ function atualizarTitulo() {
 }
 
 function atualizarBotoes() {
-    ['banco', 'solicitacao', 'avaliacao'].forEach(aba => {
-        document.getElementById(`btn-${aba}`)
+    ['banco', 'solicitacao', 'avaliacao'].forEach(a => {
+        document.getElementById(`btn-${a}`)
             .classList.remove('bg-white/10');
     });
     document.getElementById(`btn-${abaAtiva}`)
@@ -36,15 +36,23 @@ function montarCabecalho() {
     let colunas = [];
 
     if (abaAtiva === 'banco') {
-        colunas = ['ID_ORIGEM', 'DATA_CRIACAO', 'COD_REDUZIDO_CCUSTO', 'CODIGOPRD','PRODUTO', 'QUANTIDADEORC', 'UNIDADE','PRECO_UNITARIO','VALOR_TOTAL' ,'FORNECEDOR', 'COMPRADOR' ];
+        colunas = [
+            'ID_ORIGEM','DATA_CRIACAO','COD_REDUZIDO_CCUSTO',
+            'CODIGOPRD','PRODUTO','QUANTIDADEORC',
+            'UNIDADE','PRECO_UNITARIO','VALOR_TOTAL',
+            'FORNECEDOR','COMPRADOR'
+        ];
     }
 
     if (abaAtiva === 'solicitacao') {
-        colunas = ['Identificador', 'Data da Solicitação','Data limite', 'Centro de Custo',' Descritivo', 'Quantidade','Observacao' ]
+        colunas = [
+            'IDENTIFICADOR','DATA_SOLICITACAO','DATA_LIMITE',
+            'CENTRO_CUSTO','DESCRITIVO','QUANTIDADE','OBSERVACAO'
+        ];
     }
 
     if (abaAtiva === 'avaliacao') {
-        colunas = ['Fornecedor', 'Nota', 'Comentário'];
+        colunas = ['FORNECEDOR','NOTA','COMENTARIO'];
     }
 
     cabecalho.innerHTML = `
@@ -59,7 +67,7 @@ function carregarDados() {
     const corpo = document.getElementById('corpoTabela');
     corpo.innerHTML = `
         <tr>
-            <td colspan="4" class="p-4 text-center text-gray-400">
+            <td colspan="20" class="p-4 text-center text-gray-400">
                 Carregando...
             </td>
         </tr>
@@ -70,13 +78,13 @@ function carregarDados() {
         abaAtiva === 'avaliacao' ? 'DB_AVALIACAO' :
         'DB_ITENS';
 
-    fetch(`${URL_API}?sheet=${sheet}`)
+    fetch(`${URL_API}?aba=${sheet}`)
         .then(res => res.json())
         .then(dados => renderizarTabela(dados))
         .catch(() => {
             corpo.innerHTML = `
                 <tr>
-                    <td colspan="4" class="p-4 text-center text-red-500">
+                    <td colspan="20" class="p-4 text-center text-red-500">
                         Erro ao carregar dados
                     </td>
                 </tr>
@@ -88,10 +96,45 @@ function renderizarTabela(dados) {
     const corpo = document.getElementById('corpoTabela');
     corpo.innerHTML = '';
 
+    if (!dados || dados.length === 0) {
+        corpo.innerHTML = `
+            <tr>
+                <td colspan="20" class="p-4 text-center text-gray-400">
+                    Nenhum registro encontrado
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let colunas = [];
+
+    if (abaAtiva === 'banco') {
+        colunas = [
+            'ID_ORIGEM','DATA_CRIACAO','COD_REDUZIDO_CCUSTO',
+            'CODIGOPRD','PRODUTO','QUANTIDADEORC',
+            'UNIDADE','PRECO_UNITARIO','VALOR_TOTAL',
+            'FORNECEDOR','COMPRADOR'
+        ];
+    }
+
+    if (abaAtiva === 'solicitacao') {
+        colunas = [
+            'IDENTIFICADOR','DATA_SOLICITACAO','DATA_LIMITE',
+            'CENTRO_CUSTO','DESCRITIVO','QUANTIDADE','OBSERVACAO'
+        ];
+    }
+
+    if (abaAtiva === 'avaliacao') {
+        colunas = ['FORNECEDOR','NOTA','COMENTARIO'];
+    }
+
     dados.forEach(linha => {
         corpo.innerHTML += `
             <tr class="border-t">
-                ${linha.map(v => `<td class="p-3">${v}</td>`).join('')}
+                ${colunas.map(c =>
+                    `<td class="p-3">${linha[c] ?? ''}</td>`
+                ).join('')}
             </tr>
         `;
     });
